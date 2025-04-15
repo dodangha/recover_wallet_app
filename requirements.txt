@@ -1,3 +1,5 @@
 Flask
+Flask-Limiter
 mnemonic
-web3
+eth-account
+requests

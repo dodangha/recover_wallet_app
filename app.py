@@ -1,13 +1,23 @@
-from flask import Flask, request, render_template, Response, stream_with_context
+from flask import Flask, request, render_template, Response, stream_with_context, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import itertools
 import requests
 from mnemonic import Mnemonic
 from eth_account import Account
 
 app = Flask(__name__)
+app.secret_key = "random_secret_key"  # cần cho session nếu dùng thêm
 Account.enable_unaudited_hdwallet_features()
 
-ETHERSCAN_API_KEY = "YOUR_API_KEY"  # 🔑 Thay bằng API key Etherscan thật của bạn
+# ⚙️ Limit mỗi IP 5 lượt
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["5 per day"]
+)
+
+ETHERSCAN_API_KEY = "YOUR_API_KEY"
 
 TOKENS = {
     "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -56,6 +66,7 @@ def index():
     return render_template("index.html")
 
 @app.route("/recover", methods=["POST"])
+@limiter.limit("5 per day")  # 🛡️ Giới hạn 5 lần mỗi IP mỗi ngày
 def recover():
     data = request.get_json()
     known_words = data["seed"]
@@ -85,11 +96,10 @@ def recover():
                     bal = get_token_balance(address, contract)
                     token_balances[token_name] = bal if bal else 0.0
 
-                # Giả định địa chỉ BTC là cùng địa chỉ ETH (placeholder, cần xử lý riêng nếu chuẩn)
                 btc_address = acct.address
                 btc_balance = get_btc_balance(btc_address)
 
-                yield f"\n✅ Wallet found:\n📥 Contacts: {address}\n🧠 Seed: {phrase}\n"
+                yield f"\n✅ Wallet found:\n📥 Address: {address}\n🧠 Seed: {phrase}\n"
                 yield f"💎 BTC: {btc_balance if btc_balance else 0.000000:.6f}\n"
                 sorted_tokens = ["ETH", "USDT", "USDC", "DAI", "BNB", "LINK"]
                 for token in sorted_tokens:
@@ -107,6 +117,10 @@ def recover():
             yield f"\n🎉 Tổng cộng tìm được {found} ví hợp lệ.\n"
 
     return Response(stream_with_context(generate()), mimetype="text/plain")
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify(error="🚫 Bạn đã vượt quá 5 lượt miễn phí hôm nay. Vui lòng nhập mã để tiếp tục."), 429
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)

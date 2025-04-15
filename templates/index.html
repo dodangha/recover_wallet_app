@@ -21,10 +21,9 @@
       gap: 10px;
       margin-bottom: 20px;
     }
-    input {
+    input, select {
       padding: 10px;
       font-size: 16px;
-      width: 100%;
       background: #333;
       color: #fff;
       border: 1px solid #444;
@@ -72,13 +71,6 @@
       padding: 5px 10px;
       border-radius: 5px;
     }
-    select {
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 5px;
-      border-radius: 5px;
-    }
     .trial-note {
       color: red;
       font-size: 12px;
@@ -108,14 +100,28 @@
       background: #555;
       color: #ccc;
     }
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    #codeInput {
+      height: 38px;
+      width: 120px;
+    }
+    #codeSection {
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Top bar -->
   <div class="top-bar">
     <div class="top-controls">
-      <!-- Word count selector -->
       <div class="word-count-select">
         <label for="wordCountSelector">Seed phrase:</label>
         <select id="wordCountSelector" onchange="renderInputs()">
@@ -124,39 +130,42 @@
         </select>
       </div>
 
-      <!-- Language selector -->
       <div class="language-select">
         <select id="languageSelector" onchange="changeLanguage()">
           <option value="en">English</option>
           <option value="vi">Tiếng Việt</option>
-          <option value="zh">简体中文</option>
         </select>
       </div>
     </div>
-
-    <!-- Payment Info (auto translated) -->
-    <div id="paymentInfo"></div>
   </div>
 
-  <!-- Title -->
-  <h1 id="title">🔐 Recover Wallet from 12 Seed Phrase</h1>
+  <b>🔔</b><br/>
+  - Send <b>100 USDT</b> on <b>BSC or ERC20</b> network to the wallet address:<br/>
+  <code>0x9F3BCa02E939E20D4A86C0bC82c70406D8D8Ee17</code>
+  <button class="copy-btn" onclick="copyAddress()">Copy address</button><br/>
+  - Then send your wallet address to the email: <b>idodangha@gmail.com</b> to receive permanent access code.
+  <button class="copy-btn" onclick="copyEmail()">Copy Email</button>
 
-  <!-- Instruction -->
+  <h1 id="title">🔐 Recover Wallet from Seed Phrase</h1>
+
   <p class="note" id="note">
     💡 If you remember the position of any word, please enter it. Otherwise, leave it blank and the system will try all possible combinations to find the wallet.
   </p>
 
-  <!-- Inputs -->
   <div id="inputsContainer" class="inputs"></div>
 
-  <!-- Buttons -->
-  <button id="recoverBtn" onclick="recover()">🚀 Find Wallet</button>
-  <button onclick="stop()">⛔ Stop</button>
+  <div class="button-row">
+    <button id="recoverBtn" onclick="recover()">🚀 Find Wallet</button>
+    <button onclick="stop()">⛔ Stop</button>
 
-  <!-- Trial message -->
+    <div id="codeSection">
+      <input type="text" id="codeInput" placeholder="Enter access code">
+      <button onclick="submitCode()">Submit</button>
+    </div>
+  </div>
+
   <p id="trialMessage" class="trial-note">You have 5 attempts left. Please try carefully.</p>
 
-  <!-- Result -->
   <h3 id="resultTitle">Result:</h3>
   <pre id="result">⏳ Not started...</pre>
 
@@ -165,6 +174,7 @@
     let wordCount = 12;
     let trialCount = 0;
     const maxTrials = 5;
+    let accessCodeEntered = false;
 
     function renderInputs() {
       const container = document.getElementById("inputsContainer");
@@ -180,9 +190,8 @@
     }
 
     async function recover() {
-      if (trialCount >= maxTrials) {
-        alert("You have exceeded the maximum number of attempts.");
-        document.getElementById("recoverBtn").disabled = true;
+      if (trialCount >= maxTrials && !accessCodeEntered) {
+        alert("Please enter access code to continue.");
         return;
       }
 
@@ -224,9 +233,11 @@
       }
 
       trialCount++;
-      if (trialCount >= maxTrials) {
-        alert("You have exceeded the maximum number of attempts.");
-        document.getElementById("recoverBtn").disabled = true;
+      if (trialCount >= maxTrials && !accessCodeEntered) {
+        document.getElementById("codeSection").style.display = "flex";
+        document.getElementById("trialMessage").innerText = "🔒 Trial limit reached. Please enter access code.";
+      } else {
+        document.getElementById("trialMessage").innerText = `You have ${maxTrials - trialCount} attempts left.`;
       }
 
       btn.innerText = "🚀 Find Wallet";
@@ -241,76 +252,49 @@
       btn.disabled = false;
     }
 
+    function submitCode() {
+      const code = document.getElementById("codeInput").value;
+      if (code === "25251325") {
+        alert("Access granted!");
+        accessCodeEntered = true;
+        trialCount = 0; // Reset trial count after successful access code
+        document.getElementById("trialMessage").innerText = "✅ Unlimited access granted.";
+        document.getElementById("codeSection").style.display = "none";
+      } else {
+        alert("Invalid access code. Please try again.");
+      }
+    }
+
     function changeLanguage() {
       const lang = document.getElementById("languageSelector").value;
 
       if (lang === "en") {
-        document.getElementById("title").innerText = "🔐 Recover Wallet from 12 Seed Phrase";
+        document.getElementById("title").innerText = "🔐 Recover Wallet from Seed Phrase";
         document.getElementById("note").innerText = "💡 If you remember the position of any word, please enter it. Otherwise, leave it blank and the system will try all possible combinations to find the wallet.";
         document.getElementById("recoverBtn").innerText = "🚀 Find Wallet";
         document.getElementById("resultTitle").innerText = "Result:";
         document.getElementById("result").innerText = "⏳ Not started...";
-        document.getElementById("paymentInfo").innerHTML = `
-          <b>🔔 Note:</b><br/>
-          - Send <b>100 USDT</b> on <b>BSC or ERC20</b> network to wallet address:<br/>
-          <code>0x9F3BCa02E939E20D4A86C0bC82c70406D8D8Ee17</code>
-          <button class="copy-btn" onclick="copyAddress()">Copy address</button><br/>
-          - Then email your wallet address to: <b>idodangha@gmail.com</b> to receive your lifetime access code.
-          <button class="copy-btn" onclick="copyEmail()">Copy Email</button>
-        `;
       } else if (lang === "vi") {
-        document.getElementById("title").innerText = "🔐 Khôi phục ví từ 12 Seed Phrase";
-        document.getElementById("note").innerText = "💡 Nếu bạn nhớ vị trí từ khóa nào thì hãy điền vào ô đó. Nếu để trống tất cả hệ thống sẽ tự động thử tất cả các tổ hợp có thể để tìm ví.";
+        document.getElementById("title").innerText = "🔐 Khôi phục ví từ Seed Phrase";
+        document.getElementById("note").innerText = "💡 Nếu bạn nhớ vị trí của bất kỳ từ nào, hãy nhập nó. Nếu không, để trống và hệ thống sẽ thử tất cả các kết hợp có thể để tìm ví.";
         document.getElementById("recoverBtn").innerText = "🚀 Tìm ví";
         document.getElementById("resultTitle").innerText = "Kết quả:";
         document.getElementById("result").innerText = "⏳ Chưa bắt đầu...";
-        document.getElementById("paymentInfo").innerHTML = `
-          <b>🔔 Lưu ý:</b><br/>
-          - Gửi <b>100 USDT</b> trên mạng <b>BSC hoặc ERC20</b> đến địa chỉ ví:<br/>
-          <code>0x9F3BCa02E939E20D4A86C0bC82c70406D8D8Ee17</code>
-          <button class="copy-btn" onclick="copyAddress()">Copy address</button><br/>
-          - Sau đó gửi địa chỉ ví của bạn tới email: <b>idodangha@gmail.com</b> để nhận mã truy cập vĩnh viễn.
-          <button class="copy-btn" onclick="copyEmail()">Copy Email</button>
-        `;
-      } else if (lang === "zh") {
-        document.getElementById("title").innerText = "🔐 从 12 个 Seed Phrase 恢复钱包";
-        document.getElementById("note").innerText = "💡 如果您记得某个单词的位置，请填写它。如果全部留空，系统将尝试所有可能的组合来找回钱包。";
-        document.getElementById("recoverBtn").innerText = "🚀 查找钱包";
-        document.getElementById("resultTitle").innerText = "结果：";
-        document.getElementById("result").innerText = "⏳ 尚未开始...";
-        document.getElementById("paymentInfo").innerHTML = `
-          <b>🔔 注意：</b><br/>
-          - 请发送 <b>100 USDT</b>（通过 <b>BSC 或 ERC20</b> 网络）到以下钱包地址：<br/>
-          <code>0x9F3BCa02E939E20D4A86C0bC82c70406D8D8Ee17</code>
-          <button class="copy-btn" onclick="copyAddress()">Copy address</button><br/>
-          - 然后将您的钱包地址发送至邮箱：<b>idodangha@gmail.com</b>，以获取永久访问码。
-          <button class="copy-btn" onclick="copyEmail()">Copy Email</button>
-        `;
       }
     }
 
     function copyAddress() {
-      const address = document.querySelector("#paymentInfo code").textContent;
-      navigator.clipboard.writeText(address).then(() => {
-        alert("Address copied to clipboard!");
-      }).catch(err => {
-        alert("Failed to copy address: " + err);
-      });
+      navigator.clipboard.writeText("0x9F3BCa02E939E20D4A86C0bC82c70406D8D8Ee17");
+      alert("Đã copy địa chỉ ví!");
     }
 
     function copyEmail() {
-      const email = "idodangha@gmail.com";
-      navigator.clipboard.writeText(email).then(() => {
-        alert("Email copied to clipboard!");
-      }).catch(err => {
-        alert("Failed to copy email: " + err);
-      });
+      navigator.clipboard.writeText("idodangha@gmail.com");
+      alert("Đã copy email!");
     }
 
-    window.onload = () => {
-      renderInputs();
-      changeLanguage();
-    };
+    renderInputs();
   </script>
+
 </body>
 </html>
